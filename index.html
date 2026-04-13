@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Order Tracking System</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        h1 { text-align: center; }
+
+        input, button {
+            padding: 10px;
+            margin: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th { background-color: #f4f4f4; }
+
+        .placed { color: orange; font-weight: bold; }
+        .shipped { color: blue; font-weight: bold; }
+        .delivered { color: green; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<h1>Order Tracking System</h1>
+
+<h3>Place Order</h3>
+
+<input type="text" id="name" placeholder="Customer Name">
+<input type="text" id="product" placeholder="Product Name">
+<input type="number" id="quantity" placeholder="Quantity">
+<button onclick="placeOrder()">Place Order</button>
+
+<h3>Orders</h3>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Product</th>
+            <th>Qty</th>
+            <th>Status</th>
+            <th>Update</th>
+        </tr>
+    </thead>
+    <tbody id="orderTable"></tbody>
+</table>
+
+<script>
+async function placeOrder() {
+    let name = document.getElementById("name").value;
+    let product = document.getElementById("product").value;
+    let quantity = document.getElementById("quantity").value;
+
+    await fetch("http://127.0.0.1:5000/place_order", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            customer_name: name,
+            product_name: product,
+            quantity: quantity
+        })
+    });
+
+    loadOrders();
+}
+
+async function updateStatus(id, status) {
+    await fetch("http://127.0.0.1:5000/update_status", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            order_id: id,
+            status: status
+        })
+    });
+
+    loadOrders();
+}
+
+async function loadOrders() {
+    let res = await fetch("http://127.0.0.1:5000/orders");
+    let data = await res.json();
+
+    let table = document.getElementById("orderTable");
+    table.innerHTML = "";
+
+    data.forEach(order => {
+
+        let statusClass = order[4].toLowerCase();
+
+        let row = `
+        <tr>
+            <td>${order[0]}</td>
+            <td>${order[1]}</td>
+            <td>${order[2]}</td>
+            <td>${order[3]}</td>
+            <td class="${statusClass}">${order[4]}</td>
+            <td>
+                <button onclick="updateStatus(${order[0]}, 'Shipped')">Ship</button>
+                <button onclick="updateStatus(${order[0]}, 'Delivered')">Deliver</button>
+            </td>
+        </tr>
+        `;
+
+        table.innerHTML += row;
+    });
+}
+
+loadOrders();
+</script>
+
+</body>
+</html>
